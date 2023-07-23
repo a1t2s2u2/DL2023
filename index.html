@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+  </head>
+  <body>
+    <div id="output"></div>
+    <canvas id="canvas"></canvas>
+    <style>
+      html, body {
+        padding: 0; margin: 0;
+        text-align: center;
+        background: whitesmoke;
+        width: 100%; height: 100%;
+      }
+      #canvas {
+        margin: 15px 0; padding: 5px 10px;
+        width: calc(900px - 20px); height: calc(450px - 10px);
+      }
+    </style>
+  </body>
+  <script>
+    function round(v) {
+      let a = 10**2;
+      return Math.round(v*a)/a
+    }
+    function random(MAX=1) {
+      return round(Math.random() * MAX)
+    }
+    function random_rgb() {
+      let rgb = "rgb("+Math.round(Math.random()*255);
+      for(var i=0;i<2;++i) {
+        rgb += ","+Math.round(Math.random()*255)
+      }
+      return rgb+")"
+    }
+    function distance(p, q) {
+      let d = 0;
+      p.forEach((k, i) => {
+        d += (k - q[i])**2;
+      });
+      return round( Math.sqrt(d) )
+    }
+
+    class Network {
+      constructor() {
+        this.neurons = {};
+        this.shape = [20, 10];
+        this.connectLimit = 0.8;
+
+        // ニューロン生成
+        for(var i=0;i<2000;++i) {
+          this.neurons[( () => {
+            let id = "0";
+            while(
+              Object.keys(this.neurons).includes(id)
+            ) {
+              id = String(
+                Math.round( Math.random() * 10**8 )
+              );
+            }
+            return id
+          })()] = {
+            position: ( () => {
+              let p = [];
+              this.shape.forEach(s => {
+                p.push(
+                  random(s)
+                );
+              });
+              return p
+            })(),
+            connections: [],
+          }
+        }
+
+        // 接続生成
+        for(var id in this.neurons) {
+          for(var tar in this.neurons) {
+            if(id != tar) {
+              let d = distance(
+                this.neurons[id].position,
+                this.neurons[tar].position
+              );
+              if(
+                random() < 1-d/this.connectLimit
+              ) {
+                this.neurons[id].connections.push({
+                  id: tar,
+                  weight: random(),
+                })
+              }
+            }
+          }
+        }
+
+        this.Draw();
+      }
+      Draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const a = [
+          (canvas.width/this.shape[0]),
+          (canvas.height/this.shape[1])
+        ];
+
+        ctx.strokeStyle = "rgb(20, 20, 20)";
+        for(var id in this.neurons) {
+          let neuron = this.neurons[id];
+          neuron.connections.forEach(connection => {
+            let target = this.neurons[connection.id];
+            ctx.beginPath();
+            ctx.moveTo(neuron.position[0]*a[0], neuron.position[1]*a[1]);
+            ctx.lineTo(target.position[0]*a[0], target.position[1]*a[1]);
+            ctx.stroke();
+          });
+        }
+      }
+    }
+
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = 3000; canvas.height = 1500;
+    let net = new Network();
+  </script>
+</html>
